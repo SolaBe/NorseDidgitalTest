@@ -61,8 +61,9 @@ public class DatabaseHelper {
 
         if (cursor.hasNext()) {
             ArrayList<Document> listMoves = (ArrayList<Document>) cursor.next().get("moves");
-            if (listMoves.size() > 0)
-                timeIn = Long.parseLong((String) listMoves.get(listMoves.size()-1).get("time"));
+            if (listMoves.size() > 0) {
+                timeIn = (long) listMoves.get(listMoves.size() - 1).get("time");//Long.parseLong(t);
+            }
             else
                 timeIn = System.currentTimeMillis();
         }

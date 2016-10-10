@@ -4,6 +4,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.function.Consumer;
 
 /**
  * Created by Sola2Be on 04.10.2016.
@@ -43,8 +44,12 @@ public class Server {
 
     public void readDataFromClient(StringTokenizer tokenizer) {
 
+        if (tokenizer.countTokens() != 2) {
+            sendToClient("Wrong arguments count");
+            return;
+        }
         long id = Long.parseLong(tokenizer.nextToken());
-        String node = tokenizer.nextToken();
+        String nFinish = tokenizer.nextToken();
         UserModel user;
 
         if(dbHelper.checkUser(id)) {
@@ -62,30 +67,29 @@ public class Server {
             return;
         }
 
-        if (graph.getNode(node) == null) {
+        if (graph.getNode(nFinish) == null) {
             System.out.println("Node does not exist");
             sendToClient("Node does not exist");
             return;
         }
 
         if (user.getMoves().size() == 0) {
-            user.addMove(node);
+            user.addMove(nFinish);
             System.out.println("Started");
             sendToClient("Started");
             return;
         }
 
         String start = user.getLastMove();
-        String finish = node;
 
         Node nA = graph.getNode(start);
         if (nA != null) {
-            int cost = graph.checkMove(start, finish);
+            int cost = graph.checkMove(start, nFinish);
             if (cost > 0) {
-                long timeIn = dbHelper.updateMoves(start, finish, cost);
-                System.out.println("Enter "+start+" in "+timeIn+" and leave "+finish+" in "+System.currentTimeMillis()+
+                long timeIn = dbHelper.updateMoves(start, nFinish, cost);
+                System.out.println("Enter "+start+" in "+timeIn+" and leave "+nFinish+" in "+System.currentTimeMillis()+
                 " move cost "+cost);
-                sendToClient("Enter "+start+" in "+timeIn+" and leave "+finish+" in "+System.currentTimeMillis()+
+                sendToClient("Enter "+start+" in "+timeIn+" and leave "+nFinish+" in "+System.currentTimeMillis()+
                         " move cost "+cost);
             }
             else {
@@ -95,15 +99,13 @@ public class Server {
             }
         }
 
-        user.addMove(node);
+        user.addMove(nFinish);
     }
 
     public UserModel getUser(long id) {
-        for (UserModel user : users) {
-            if (user.getId() == id)
-                return user;
-        }
-        return new UserModel(id);
+
+        return users.stream().filter(userModel -> userModel.getId() == id)
+                .reduce((userModel, userModel2) -> userModel = userModel2).orElse(new UserModel(id));
     }
 
     public void sendToClient(String message) {
